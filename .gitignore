@@ -1,5 +1,17 @@
 HELP.md
 target/
+
+### Variables de entorno (credenciales) ###
+.env
+!.env.example
+
+### Archivos subidos por los usuarios (entregas de tareas) ###
+uploads/
+
+### Herramientas de IA (configuración local, no se versiona) ###
+CLAUDE.md
+.claude/
+.qodo/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
