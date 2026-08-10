@@ -1,169 +1,71 @@
-Datos a saber de la BD
+# Base de datos UniConnect
 
-Contraseña: UniConnect2026!Db
+Los datos de conexión (host, puerto, base, usuario y contraseña) NO van aquí:
+se configuran mediante variables de entorno en el archivo `.env` de este mismo
+directorio, que no se versiona. Usa `.env.example` como plantilla. Además de las
+credenciales de MySQL, el `.env` debe definir `JWT_SECRETO` (mínimo 32 caracteres);
+sin él la aplicación no arranca.
 
-10.0.0.108
+## Migraciones automáticas
 
-Puerto:
-3306
+El esquema **y los datos de demostración se crean solos** al arrancar el servidor
+(`mvnw spring-boot:run`), no requiere ningún paso manual. Lo hace
+[Flyway](https://flywaydb.org/), configurado con dos piezas:
 
-Usuario:
-uniconnect_app
+- `spring.datasource.url` incluye `?createDatabaseIfNotExist=true`: si `DB_NAME` no
+  existe todavía en el servidor, el driver de MySQL la crea en la primera conexión
+  (el usuario de `DB_USER` necesita privilegio `CREATE` a nivel de servidor).
+- Flyway aplica las migraciones de [`src/main/resources/db/migration/`](src/main/resources/db/migration/)
+  contra esa base, en orden, antes de que Hibernate levante el contexto:
+  - `V1__esquema_inicial.sql` crea las 13 tablas y siembra los tres roles. Es la
+    fuente de verdad del modelo de datos, no este documento.
+  - `V2__datos_semilla.sql` carga el juego de datos de demostración (ver abajo).
 
-Password:
-UniConnect2026!Db
+`spring.jpa.hibernate.ddl-auto=validate` se mantiene como red de seguridad: Hibernate
+nunca modifica el esquema, solo confirma que las entidades JPA calzan con lo que
+Flyway acaba de aplicar. **Cualquier cambio de estructura futuro va en una migración
+nueva** (`V3__algo.sql`, `V4__algo.sql`...), nunca editando `V1` o `V2` una vez
+aplicadas — Flyway rechaza una migración ya ejecutada si su contenido cambió (error
+de checksum).
 
-Base de datos:
-uniconnect_db
+### Resetear los datos de demostración
 
--- ====================================================
--- SCRIPT DE BASE DE DATOS: UniConnect (Optimizado para MySQL)
--- ====================================================
+Flyway solo aplica cada migración **una vez** (queda registrada en
+`flyway_schema_history`); arrancar el servidor de nuevo no vuelve a ejecutar `V2`. Si
+quieres regenerar los datos de demo desde cero más adelante, corre el archivo a mano
+—los `TRUNCATE` del principio lo dejan listo para reinsertar sin duplicados—:
 
-CREATE DATABASE IF NOT EXISTS uniconnect_db 
-CHARACTER SET utf8mb4 
-COLLATE utf8mb4_unicode_ci;
+```
+mysql -h <host> -u <usuario> -p uniconnect < src/main/resources/db/migration/V2__datos_semilla.sql
+```
 
-USE uniconnect_db;
+## Datos de prueba
 
--- 1. ROLES Y USUARIOS (Login compartido)
-CREATE TABLE roles (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE -- 'Administrativo', 'Estudiante', 'Profesor'
-) ENGINE=InnoDB;
+`V2__datos_semilla.sql` carga carreras, materias, secciones del periodo `2026-C3`,
+inscripciones, asistencias, tareas en varios estados y una conversación de mensajes.
 
-CREATE TABLE usuarios (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    rol_id INT NOT NULL,
-    nombres VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(100) NOT NULL,
-    email VARCHAR(150) NOT NULL UNIQUE,
-    password_hash VARCHAR(255) NOT NULL,
-    matricula_empleado_id VARCHAR(50) UNIQUE, -- Matrícula para estudiantes, ID para empleados
-    telefono VARCHAR(20),
-    estado ENUM('Activo', 'Inactivo', 'Suspendido') DEFAULT 'Activo',
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (rol_id) REFERENCES roles(id) ON UPDATE CASCADE ON DELETE RESTRICT
-) ENGINE=InnoDB;
+### Usuarios de demostración
 
--- 2. ESTRUCTURA ACADÉMICA (Admin)
-CREATE TABLE carreras (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(150) NOT NULL,
-    codigo VARCHAR(20) NOT NULL UNIQUE,
-    descripcion TEXT,
-    duracion_periodos INT NOT NULL
-) ENGINE=InnoDB;
+| Rol | Correo | Contraseña |
+| --- | --- | --- |
+| Estudiante | `ana.martinez@uniconnect.edu.do` | `uniconnect123` |
+| Estudiante | `luis.peralta@uniconnect.edu.do` | `uniconnect123` |
+| Estudiante | `carla.reyes@uniconnect.edu.do` | `uniconnect123` |
+| Profesor | `r.gomez@uniconnect.edu.do` | `profesor123` |
+| Administrativo | `admin@uniconnect.edu.do` | `admin123` |
 
-CREATE TABLE materias (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    carrera_id INT,
-    nombre VARCHAR(150) NOT NULL,
-    codigo VARCHAR(20) NOT NULL UNIQUE,
-    creditos INT NOT NULL,
-    FOREIGN KEY (carrera_id) REFERENCES carreras(id) ON UPDATE CASCADE ON DELETE SET NULL
-) ENGINE=InnoDB;
+Ana Martínez es la cuenta principal de la demo: tiene cinco materias en curso,
+historial de calificaciones, asistencias, tareas en varios estados y conversaciones.
+Luis y Carla existen para comprobar que un estudiante nunca ve datos de otro.
 
--- 3. SECCIONES Y HORARIOS (Admin, Profesor, Estudiante)
-CREATE TABLE secciones (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    materia_id INT NOT NULL,
-    profesor_id INT NOT NULL,
-    periodo VARCHAR(20) NOT NULL, -- Ej: '2026-C3'
-    cupo_maximo INT NOT NULL,
-    aula VARCHAR(50),
-    horario_descripcion VARCHAR(150), -- Ej: 'Lu-Mi 18:00 - 20:00'
-    estado ENUM('Abierta', 'Cerrada', 'En Curso', 'Finalizada') DEFAULT 'Abierta',
-    FOREIGN KEY (materia_id) REFERENCES materias(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (profesor_id) REFERENCES usuarios(id) ON UPDATE CASCADE ON DELETE RESTRICT
-) ENGINE=InnoDB;
+## Resumen del modelo de datos
 
--- 4. INSCRIPCIONES (Estudiante, Admin)
-CREATE TABLE inscripciones (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    estudiante_id INT NOT NULL,
-    seccion_id INT NOT NULL,
-    fecha_inscripcion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    estado ENUM('Inscrito', 'Retirado', 'Aprobado', 'Reprobado') DEFAULT 'Inscrito',
-    UNIQUE(estudiante_id, seccion_id), -- Evita que un estudiante se inscriba dos veces en la misma sección
-    FOREIGN KEY (estudiante_id) REFERENCES usuarios(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB;
+El detalle columna por columna vive en
+[`src/main/resources/db/migration/V1__esquema_inicial.sql`](src/main/resources/db/migration/V1__esquema_inicial.sql).
+Relaciones entre las 13 tablas:
 
--- 5. GESTIÓN DE CLASES: ASISTENCIAS, TAREAS Y MATERIALES (Profesor, Estudiante)
-CREATE TABLE asistencias (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    inscripcion_id INT NOT NULL,
-    fecha DATE NOT NULL,
-    estado ENUM('Presente', 'Ausente', 'Tardanza', 'Excusa') NOT NULL,
-    observaciones VARCHAR(255),
-    FOREIGN KEY (inscripcion_id) REFERENCES inscripciones(id) ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE tareas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    seccion_id INT NOT NULL,
-    titulo VARCHAR(150) NOT NULL,
-    descripcion TEXT,
-    fecha_entrega DATETIME NOT NULL,
-    archivo_adjunto_url VARCHAR(255),
-    creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE entregas_tareas (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    tarea_id INT NOT NULL,
-    estudiante_id INT NOT NULL,
-    archivo_url VARCHAR(255) NOT NULL,
-    fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    calificacion DECIMAL(5,2),
-    comentarios_profesor TEXT,
-    FOREIGN KEY (tarea_id) REFERENCES tareas(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (estudiante_id) REFERENCES usuarios(id) ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB;
-
-CREATE TABLE materiales (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    seccion_id INT NOT NULL,
-    titulo VARCHAR(150) NOT NULL,
-    descripcion TEXT,
-    tipo_archivo VARCHAR(50), -- Ej: PDF, Video, Enlace
-    url_archivo VARCHAR(255) NOT NULL,
-    fecha_subida TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (seccion_id) REFERENCES secciones(id) ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- 6. CALIFICACIONES FINALES (Profesor, Estudiante)
-CREATE TABLE calificaciones_finales (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    inscripcion_id INT NOT NULL UNIQUE,
-    nota_numerica DECIMAL(5,2) NOT NULL,
-    literal VARCHAR(2), -- Ej: A, B, C, F
-    fecha_publicacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (inscripcion_id) REFERENCES inscripciones(id) ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- 7. COMUNICACIONES Y MENSAJES (Todos los perfiles)
-CREATE TABLE mensajes (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    remitente_id INT NOT NULL,
-    destinatario_id INT NOT NULL,
-    asunto VARCHAR(150),
-    cuerpo TEXT NOT NULL,
-    leido TINYINT(1) DEFAULT 0, -- MySQL maneja los booleanos como TINYINT(1)
-    fecha_envio TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (remitente_id) REFERENCES usuarios(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    FOREIGN KEY (destinatario_id) REFERENCES usuarios(id) ON UPDATE CASCADE ON DELETE CASCADE
-) ENGINE=InnoDB;
-
--- 8. CONFIGURACIÓN DEL SISTEMA (Admin)
-CREATE TABLE configuracion_sistema (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    clave VARCHAR(100) NOT NULL UNIQUE,
-    valor VARCHAR(255) NOT NULL,
-    descripcion TEXT
-) ENGINE=InnoDB;
-
--- INSERCIÓN DE ROLES BÁSICOS
-INSERT INTO roles (nombre) VALUES ('Administrativo'), ('Profesor'), ('Estudiante');
+- `roles` → `usuarios` (una sola tabla de usuarios para los tres perfiles; el rol discrimina).
+- `carreras` → `materias` → `secciones` (una sección es materia + profesor + periodo, ej. `2026-C3`).
+- `inscripciones` es la tabla pivote estudiante↔sección: `asistencias` y `calificaciones_finales` cuelgan de ahí, no de `usuarios`.
+- `tareas`, `materiales` cuelgan de `secciones`; `entregas_tareas` de `tarea` + `estudiante`.
+- `mensajes` (remitente/destinatario → `usuarios`) y `configuracion_sistema` son transversales.
