@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.capa_de_negocio.adm_universidad.entidad.CalificacionFinal;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface CalificacionFinalRepositorio extends JpaRepository<CalificacionFinal, Integer> {
 
     /** Notas publicadas del estudiante, con la materia y el periodo ya resueltos. */

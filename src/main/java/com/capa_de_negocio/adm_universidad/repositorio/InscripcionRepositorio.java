@@ -3,12 +3,15 @@ package com.capa_de_negocio.adm_universidad.repositorio;
 import java.util.List;
 import java.util.Optional;
 
+import com.capa_de_negocio.adm_universidad.entidad.EstadoInscripcion;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.capa_de_negocio.adm_universidad.entidad.Inscripcion;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface InscripcionRepositorio extends JpaRepository<Inscripcion, Integer> {
 
     /**
@@ -53,4 +56,9 @@ public interface InscripcionRepositorio extends JpaRepository<Inscripcion, Integ
             group by i.seccion.id
             """)
     List<Object[]> contarOcupadasPorSeccion(@Param("seccionIds") List<Integer> seccionIds);
+
+    List<Inscripcion> findByEstudianteId(Long estudianteId);
+    List<Inscripcion> findBySeccionId(Long seccionId);
+    long countBySeccionIdAndEstado(Long seccionId, EstadoInscripcion estadoInscripcion);
+    boolean existsByEstudianteIdAndSeccionId(Long estudianteId, Long seccionId);
 }

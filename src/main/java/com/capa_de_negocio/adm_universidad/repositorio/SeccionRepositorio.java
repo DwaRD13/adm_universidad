@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.capa_de_negocio.adm_universidad.entidad.Seccion;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface SeccionRepositorio extends JpaRepository<Seccion, Integer> {
 
     /** Catalogo de inscripcion: secciones abiertas del periodo, con materia, carrera y profesor. */
@@ -35,4 +37,8 @@ public interface SeccionRepositorio extends JpaRepository<Seccion, Integer> {
     /** Reserva cuando configuracion_sistema no tiene definido el periodo activo. */
     @Query("select max(s.periodo) from Seccion s")
     Optional<String> buscarPeriodoMasReciente();
+
+    List<Seccion> findByPeriodo(String periodo);
+    List<Seccion> findByMateriaId(Long materiaId);
+    List<Seccion> findByProfesorId(Long profesorId);
 }

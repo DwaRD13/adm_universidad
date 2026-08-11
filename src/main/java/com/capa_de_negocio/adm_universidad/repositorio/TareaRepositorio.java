@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.capa_de_negocio.adm_universidad.entidad.Tarea;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface TareaRepositorio extends JpaRepository<Tarea, Integer> {
 
     @Query("""

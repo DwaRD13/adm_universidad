@@ -7,7 +7,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.capa_de_negocio.adm_universidad.entidad.Asistencia;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface AsistenciaRepositorio extends JpaRepository<Asistencia, Integer> {
 
     /** Todos los registros del estudiante, ordenados de la clase mas reciente a la mas antigua. */

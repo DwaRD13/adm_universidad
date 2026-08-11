@@ -8,7 +8,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.capa_de_negocio.adm_universidad.entidad.Mensaje;
+import org.springframework.stereotype.Repository;
 
+@Repository
 public interface MensajeRepositorio extends JpaRepository<Mensaje, Integer> {
 
     /** Bandeja completa del usuario: enviados y recibidos, del mas reciente al mas antiguo. */

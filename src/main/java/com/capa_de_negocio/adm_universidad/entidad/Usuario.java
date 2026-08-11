@@ -49,7 +49,6 @@ public class Usuario {
     @Column(name = "estado")
     private EstadoUsuario estado;
 
-    /** Lo pone MySQL con CURRENT_TIMESTAMP; la aplicacion nunca lo escribe. */
     @Column(name = "creado_en", insertable = false, updatable = false)
     private LocalDateTime creadoEn;
 
