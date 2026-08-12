@@ -22,4 +22,9 @@ public interface EntregaTareaRepositorio extends JpaRepository<EntregaTarea, Int
             """)
     List<EntregaTarea> buscarPorEstudianteYTareas(@Param("estudianteId") Integer estudianteId,
             @Param("tareaIds") List<Integer> tareaIds);
+
+
+            
+        List<com.capa_de_negocio.adm_universidad.entidad.EntregaTarea> findByTareaIdOrderByFechaEnvioDesc(Integer tareaId);
+
 }

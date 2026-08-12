@@ -35,4 +35,12 @@ public interface SeccionRepositorio extends JpaRepository<Seccion, Integer> {
     /** Reserva cuando configuracion_sistema no tiene definido el periodo activo. */
     @Query("select max(s.periodo) from Seccion s")
     Optional<String> buscarPeriodoMasReciente();
+    
+    @org.springframework.data.jpa.repository.Query(
+    "SELECT s FROM Seccion s JOIN FETCH s.materia m WHERE s.profesor.id = :profesorId AND s.periodo = :periodo ORDER BY m.nombre")
+List<com.capa_de_negocio.adm_universidad.entidad.Seccion> buscarPorProfesorYPeriodo(
+        @org.springframework.data.repository.query.Param("profesorId") Integer profesorId,
+        @org.springframework.data.repository.query.Param("periodo") String periodo);
+
+
 }
