@@ -47,13 +47,13 @@ public class ConfiguracionSeguridad {
                         .requestMatchers("/api/auth/login", "/api/status").permitAll()
                         // Las descargas se abren desde el navegador o un visor externo,
                         // que no envian la cabecera Authorization.
-//                        .requestMatchers(HttpMethod.GET, "/api/archivos/**").permitAll()
-//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .anyRequest().permitAll());
-//                .exceptionHandling(e -> e
-//                        .authenticationEntryPoint(manejadorErrores)
-//                        .accessDeniedHandler(manejadorErrores))
-//                .addFilterBefore(filtroJwt, UsernamePasswordAuthenticationFilter.class);
+                        .requestMatchers(HttpMethod.GET, "/api/archivos/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .anyRequest().authenticated())
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(manejadorErrores)
+                        .accessDeniedHandler(manejadorErrores))
+                .addFilterBefore(filtroJwt, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
