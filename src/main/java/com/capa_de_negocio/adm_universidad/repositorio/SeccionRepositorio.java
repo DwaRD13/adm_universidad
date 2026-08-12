@@ -3,6 +3,7 @@ package com.capa_de_negocio.adm_universidad.repositorio;
 import java.util.List;
 import java.util.Optional;
 
+import com.capa_de_negocio.adm_universidad.dto.administrador.SeccionDTO;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -41,4 +42,9 @@ public interface SeccionRepositorio extends JpaRepository<Seccion, Integer> {
     List<Seccion> findByPeriodo(String periodo);
     List<Seccion> findByMateriaId(Long materiaId);
     List<Seccion> findByProfesorId(Long profesorId);
+
+    @Query("SELECT s FROM Seccion s JOIN FETCH s.materia JOIN FETCH s.profesor")
+    List<Seccion> findAllConMateriaYProfesor();
+
+    Seccion findById(Long id);
 }

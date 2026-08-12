@@ -1,5 +1,6 @@
 package com.capa_de_negocio.adm_universidad.controlador;
 
+import com.capa_de_negocio.adm_universidad.dto.UsuarioDto;
 import com.capa_de_negocio.adm_universidad.entidad.Usuario;
 import com.capa_de_negocio.adm_universidad.servicio.ServicioUsuarios;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,15 +12,19 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/usuarios")
-@PreAuthorize("hasRole('Administrativo')")
 public class ControladorUsuario {
 
     @Autowired
     private ServicioUsuarios usuarioService;
 
     @GetMapping
-    public ResponseEntity<List<Usuario>> listarUsuarios() {
+    public ResponseEntity<List<UsuarioDto>> listarUsuarios() {
         return ResponseEntity.ok(usuarioService.obtenerTodosLosUsuarios());
+    }
+
+    @GetMapping("/rol/{rol}")
+    public ResponseEntity<List<UsuarioDto>> listarUsuariosPorRol(@PathVariable(name = "rol") String rolName) {
+        return ResponseEntity.ok(usuarioService.obtenerUsuariosMedianteRol(rolName));
     }
 
     @PostMapping

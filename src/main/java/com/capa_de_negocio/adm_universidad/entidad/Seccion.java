@@ -1,5 +1,7 @@
 package com.capa_de_negocio.adm_universidad.entidad;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -9,6 +11,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.Formula;
 
 /** Tabla secciones: materia + profesor + periodo (ej. '2026-C3'). */
 @Entity
@@ -21,10 +24,12 @@ public class Seccion {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "materia_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Materia materia;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "profesor_id", nullable = false)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Usuario profesor;
 
     @Column(name = "periodo", nullable = false, length = 20)
@@ -42,6 +47,9 @@ public class Seccion {
 
     @Column(name = "estado")
     private EstadoSeccion estado;
+
+    @Formula("(SELECT COUNT(*) FROM inscripciones i WHERE i.seccion_id = id AND i.estado = 'Inscrito')")
+    private Integer cantidadInscritos;
 
     public Integer getId() {
         return id;
@@ -105,5 +113,13 @@ public class Seccion {
 
     public void setEstado(EstadoSeccion estado) {
         this.estado = estado;
+    }
+
+    public Integer getCantidadInscritos() {
+        return cantidadInscritos;
+    }
+
+    public void setCantidadInscritos(Integer cantidadInscritos) {
+        this.cantidadInscritos = cantidadInscritos;
     }
 }

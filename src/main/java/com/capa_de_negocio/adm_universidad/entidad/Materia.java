@@ -1,5 +1,6 @@
 package com.capa_de_negocio.adm_universidad.entidad;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,6 +22,7 @@ public class Materia {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "carrera_id")
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private Carrera carrera;
 
     @Column(name = "nombre", nullable = false, length = 150)
