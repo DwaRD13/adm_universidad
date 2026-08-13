@@ -53,4 +53,17 @@ public interface InscripcionRepositorio extends JpaRepository<Inscripcion, Integ
             group by i.seccion.id
             """)
     List<Object[]> contarOcupadasPorSeccion(@Param("seccionIds") List<Integer> seccionIds);
+
+    long countBySeccionIdAndEstadoNot(Integer seccionId,
+        com.capa_de_negocio.adm_universidad.entidad.EstadoInscripcion estado);
+
+@org.springframework.data.jpa.repository.Query(
+    "SELECT i FROM Inscripcion i JOIN FETCH i.estudiante WHERE i.seccion.id IN :seccionIds AND i.estado <> :excluido")
+List<com.capa_de_negocio.adm_universidad.entidad.Inscripcion> buscarPorSeccionesVigentes(
+        @org.springframework.data.repository.query.Param("seccionIds") List<Integer> seccionIds,
+        @org.springframework.data.repository.query.Param("excluido") com.capa_de_negocio.adm_universidad.entidad.EstadoInscripcion excluido);
+
+
+
+
 }
