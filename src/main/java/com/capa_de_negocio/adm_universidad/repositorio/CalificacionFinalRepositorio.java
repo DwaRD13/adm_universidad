@@ -1,6 +1,7 @@
 package com.capa_de_negocio.adm_universidad.repositorio;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -20,4 +21,17 @@ public interface CalificacionFinalRepositorio extends JpaRepository<Calificacion
             order by s.periodo desc, m.nombre
             """)
     List<CalificacionFinal> buscarPorEstudiante(@Param("estudianteId") Integer estudianteId);
+    @Query("""
+        select c from CalificacionFinal c
+          join fetch c.inscripcion i
+          join fetch i.estudiante
+          join fetch i.seccion s
+          join fetch s.materia
+        where s.id in :seccionIds
+        """)
+    List<CalificacionFinal> buscarPorSecciones(
+            @Param("seccionIds") List<Integer> seccionIds);
+
+    Optional<CalificacionFinal> findByInscripcionId(
+            Integer inscripcionId);
 }

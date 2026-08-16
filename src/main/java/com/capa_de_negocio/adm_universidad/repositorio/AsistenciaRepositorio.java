@@ -1,6 +1,8 @@
 package com.capa_de_negocio.adm_universidad.repositorio;
 
 import java.util.List;
+import java.time.LocalDate;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -18,4 +20,18 @@ public interface AsistenciaRepositorio extends JpaRepository<Asistencia, Integer
             order by a.fecha desc
             """)
     List<Asistencia> buscarPorInscripciones(@Param("inscripcionIds") List<Integer> inscripcionIds);
+    @Query("""
+        select a from Asistencia a
+          join fetch a.inscripcion i
+          join fetch i.estudiante
+          join fetch i.seccion s
+          join fetch s.materia
+        where s.id in :seccionIds
+        """)
+    List<Asistencia> buscarPorSecciones(
+            @Param("seccionIds") List<Integer> seccionIds);
+
+    Optional<Asistencia> findByInscripcionIdAndFecha(
+            Integer inscripcionId,
+            LocalDate fecha);
 }
